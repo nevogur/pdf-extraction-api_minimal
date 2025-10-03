@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, UploadFile, File, Form
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Header
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 import json
@@ -23,6 +23,21 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Simple API key validation
+VALID_API_KEYS = {"demo": "free", "test": "free", "rapidapi": "free"}
+
+def validate_api_key(x_rapidapi_key: Optional[str] = Header(None)):
+    """Simple API key validation"""
+    if not x_rapidapi_key:
+        # For development, allow requests without API key
+        return True
+    if x_rapidapi_key in VALID_API_KEYS:
+        return True
+    # For RapidAPI testing, accept any key that starts with the expected format
+    if x_rapidapi_key.startswith("29315dfd7amsh"):
+        return True
+    return False
 
 # Simple in-memory template storage
 TEMPLATES = {
@@ -188,16 +203,23 @@ async def health():
     return {"status": "ok", "version": "1.0.0"}
 
 @app.get("/templates")
-async def get_templates():
+async def get_templates(x_rapidapi_key: Optional[str] = Header(None)):
     """Get list of available templates"""
+    if not validate_api_key(x_rapidapi_key):
+        raise HTTPException(status_code=401, detail="Invalid API key")
     return {"templates": list(TEMPLATES.keys())}
 
 @app.post("/extract")
 async def extract_data(
     file: UploadFile = File(...),
-    template_name: str = Form(...)
+    template_name: str = Form(...),
+    x_rapidapi_key: Optional[str] = Header(None)
 ):
     """Extract data from PDF using a template"""
+    
+    # Validate API key
+    if not validate_api_key(x_rapidapi_key):
+        raise HTTPException(status_code=401, detail="Invalid API key")
     
     # Validate file type
     if not file.content_type or not file.content_type.startswith('application/pdf'):
@@ -245,9 +267,14 @@ async def extract_data(
 @app.post("/extract-custom")
 async def extract_custom(
     file: UploadFile = File(...),
-    template_json: str = Form(...)
+    template_json: str = Form(...),
+    x_rapidapi_key: Optional[str] = Header(None)
 ):
     """Extract data from PDF using a custom template"""
+    
+    # Validate API key
+    if not validate_api_key(x_rapidapi_key):
+        raise HTTPException(status_code=401, detail="Invalid API key")
     
     # Validate file type
     if not file.content_type or not file.content_type.startswith('application/pdf'):
