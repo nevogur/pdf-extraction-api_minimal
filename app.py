@@ -181,7 +181,7 @@ def extract_fields(text: str, template: Dict[str, Any]) -> Dict[str, Any]:
 
 @app.get("/")
 async def root():
-    return {"message": "PDF Data Extractor API", "version": "1.0.0"}
+    return {"status": "ok", "version": "1.0.0"}
 
 @app.get("/health")
 async def health():
