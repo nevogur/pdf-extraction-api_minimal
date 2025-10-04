@@ -45,22 +45,22 @@ TEMPLATES = {
         "name": "invoice_v1",
         "fields": {
             "invoice_number": {
-                "pattern": r"(?:Invoice\s*(?:No\.?|#)\s*)\s*(?P<value>[A-Z0-9\-_/]{3,})",
+                "pattern": r"(?:Invoice\s*No\.?[:\s]*|Invoice\s*Number[:\s]*|Invoice\s*#\s*)(?P<value>[A-Z0-9\-_/]{3,})",
                 "postprocess": "strip",
                 "required": True
             },
             "invoice_date": {
-                "pattern": r"(?:Date)[:\s]*?(?P<value>\d{2}[/-]\d{2}[/-]\d{4}|\d{4}[/-]\d{2}[/-]\d{2})",
+                "pattern": r"(?:Date[:\s]*|Invoice\s*Date[:\s]*)(?P<value>\d{2}[/-]\d{2}[/-]\d{4}|\d{4}[/-]\d{2}[/-]\d{2})",
                 "postprocess": "date",
                 "required": True
             },
             "total_amount": {
-                "pattern": r"(?:Total)[:\s]*?(?P<value>[\p{Sc}]?\s?\d{1,3}(?:[\s,]\d{3})*(?:\.\d{2})?)",
+                "pattern": r"(?:Total[:\s]*|Amount[:\s]*|Invoice\s*Total[:\s]*)(?P<value>\$?\s?\d{1,3}(?:[,]\d{3})*(?:\.\d{2})?)",
                 "postprocess": "currency",
                 "required": True
             },
             "currency": {
-                "pattern": r"(?P<value>USD|EUR|GBP|\$|€|£)",
+                "pattern": r"(?P<value>USD|EUR|GBP|ILS)",
                 "postprocess": "strip",
                 "required": False
             }
@@ -85,6 +85,31 @@ TEMPLATES = {
                 "required": True
             }
         }
+    },
+    "invoice_table_v1": {
+        "name": "invoice_table_v1",
+        "fields": {
+            "invoice_number": {
+                "pattern": r"(?:Invoice\s*No\.?[:\s]*)(?P<value>[A-Z0-9\-_/]+)",
+                "postprocess": "strip",
+                "required": True
+            },
+            "invoice_date": {
+                "pattern": r"(?:Date[:\s]*)(?P<value>\d{2}/\d{2}/\d{4})",
+                "postprocess": "date",
+                "required": True
+            },
+            "total_amount": {
+                "pattern": r"(?:Total[:\s]*)(?P<value>\$\d{1,3}(?:,\d{3})*(?:\.\d{2})?)",
+                "postprocess": "currency",
+                "required": True
+            },
+            "currency": {
+                "pattern": r"(?:Currency[:\s]*)(?P<value>USD|EUR|GBP|ILS)",
+                "postprocess": "strip",
+                "required": False
+            }
+        }
     }
 }
 
@@ -101,7 +126,7 @@ def postprocess_value(value: str, postprocess_type: str) -> str:
         return value
     elif postprocess_type == "currency":
         # Remove currency symbols and normalize
-        value = re.sub(r'[\p{Sc}]', '', value)
+        value = re.sub(r'[\$€£¥]', '', value)
         value = re.sub(r'[,\s]', '', value)
         return value
     return value
